@@ -6,21 +6,28 @@ import datetime
 _PATH_TO_FIREBASE_CERT = "cert.json"
 _TEST_DOUBLES_MODE = True # Controls whether or not to use test doubles, such as a fixed today()
 
+# Establish the connection to the database
+creds = credentials.Certificate(_PATH_TO_FIREBASE_CERT)
+firebase_admin.initialize_app(creds)
+db = firestore.client()
+
 def today(dummy=False):
     if dummy:
         return '02_23_2024'
     return datetime.datetime.now().date().strftime("%d_%m_%Y")
 
-def get_user_data(db: 'FirebaseDatabase', email: str):
+def get_user_data(email: str):
     """Input: A live database and an email string
     Output: The data associated with the email in that database"""
+
     userdat = db.collection('User') # Navigate to the User collection
 
     # This part of the navigation uses the 'email' field of the documents in the User collection. If that field is removed,
     # simply adjust this to use the .document() method instead
     query = userdat.where('Email', '==', email).limit(1)
 
-    one = query.get()[0]
+    #one = query.get()[0]
+    one = userdat.document(email).get()
 
     user_globals = one.to_dict()
     user_stats = one.reference.collection('Stats')

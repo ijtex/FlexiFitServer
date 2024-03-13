@@ -17,17 +17,12 @@ _PATH_TO_FIREBASE_CERT = "cert.json" # Make sure that the Firebase certificate f
 _CLASSIFIER = pickle.load(open('classifier', 'rb'))
 _global_apicalls = 0 # _global_apicalls is ONLY to be modified by the _weather_data method of RecServer
 
-# Establish the connection to the database
-creds = credentials.Certificate(_PATH_TO_FIREBASE_CERT)
-firebase_admin.initialize_app(creds)
-_DB = firestore.client()
-
 
 class RecServer(BaseHTTPRequestHandler):
     # Load the classifier at server start time, and keep it loaded
     def __init__(self, *args, **kwargs):
         """Initializes 2 resources for the life of the server: The classifier model and the firebase database connection."""
-        self.db = _DB
+        #self.db = _DB
         self.cls = _CLASSIFIER
 
         # Also keep the normal init process or a BaseHTTPRequestHandler
@@ -59,7 +54,7 @@ class RecServer(BaseHTTPRequestHandler):
 
     def _recommend(self, email: str):
         """Accesses the necessary data to make recommendations and returns what's recommended"""
-        db_info = fbq.get_user_data(self.db, email)
+        db_info = fbq.get_user_data(email)
 
         report = self._weather_data(db_info['City'])
         Precipitation = report[0]
@@ -100,7 +95,7 @@ class RecServer(BaseHTTPRequestHandler):
             raise Exception('100 API calls made this session! Make sure that you are not approaching 1,000 daily calls.')
         
         _global_apicalls += 1
-        report = outa_seantext.get_weather(city)
+        return outa_seantext.get_weather(city)
 
 def run_server(port=8000):
     address = ('', port)
