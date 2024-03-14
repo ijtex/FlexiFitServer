@@ -40,15 +40,20 @@ class RecServer(BaseHTTPRequestHandler):
 
         email = self.path.split('/')[1] # self.path from [1] onwards contains the parameters we'll need to make predictions
 
+        # Get the recommendations
+        try:
+            response = self._recommend(email)[0]
+            self.send_response(200)
+        except fbq.EmailNotFound as ex:
+            self.send_response(404)
+            response = ex.text
+        except Exception as e:
+            self.send_response(500)
+            response = 'Server-side problem during recommendation: ' + repr(e) + '\nServer still running. This is probably an issue that Isaac needs to fix.\nIf this issue persists, remove this except block that starts on line 50,\ntry to reproduce the error, and send Isaac the traceback'
+
         # Use these fixed headers for a successful response
-        self.send_response(200)
         self.send_header("Content-type", "text/plain")
         self.end_headers()
-
-        # Get the recommendations
-        recommendations = self._recommend(email)
-        response = recommendations[0] + '\n'
-
         self.wfile.write(bytes(response, "utf-8"))
 
 
@@ -73,9 +78,9 @@ class RecServer(BaseHTTPRequestHandler):
         ArmDay = (day_determiner == 2)
         LegDay = (day_determiner == 3)
         
-        WeightLoss = (db_info['Preference '] == 0)
-        HealthMaintenance = (db_info['Preference '] == 1)
-        MuscleGain = (db_info['Preference '] == 2)
+        WeightLoss = (db_info['Preference'] == 0)
+        HealthMaintenance = (db_info['Preference'] == 1)
+        MuscleGain = (db_info['Preference'] == 2)
 
         dob = db_info['DOB']
         dob = dob.split('_')

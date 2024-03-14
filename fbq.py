@@ -2,9 +2,14 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
 import datetime
+import os
 
-_PATH_TO_FIREBASE_CERT = "cert.json"
+_PATH_TO_FIREBASE_CERT = os.path.abspath("cert.json")
 _TEST_DOUBLES_MODE = True # Controls whether or not to use test doubles, such as a fixed today()
+
+class EmailNotFound(Exception):
+    def __init__(self, s):
+        self.text = "The email " + s + " doesn't exist in Firebase"
 
 # Establish the connection to the database
 creds = credentials.Certificate(_PATH_TO_FIREBASE_CERT)
@@ -28,9 +33,13 @@ def get_user_data(email: str):
 
     #one = query.get()[0]
     one = userdat.document(email).get()
-
+    if not one.exists:
+        raise EmailNotFound(email)
     user_globals = one.to_dict()
     user_stats = one.reference.collection('Stats')
     user_daily = user_stats.document(today(_TEST_DOUBLES_MODE)).get().to_dict() # if this fails, check _TEST_DOUBLES_MODE
 
     return user_globals | user_daily
+
+if __name__ == '__main__':
+    print(get_user_data('TestEmail@example.com'))
